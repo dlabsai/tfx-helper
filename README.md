@@ -16,6 +16,12 @@ This package contains small utilities that help in creation of [TFX](https://git
 
 ## How?
 
+### Install
+
+```sh
+pip install tfx-helper
+```
+
 ### Pipeline definition
 
 1. Use our helper component interface in you pipeline definition.
