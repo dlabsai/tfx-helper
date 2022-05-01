@@ -169,4 +169,4 @@ def run() -> None:
 ## More info
 
 Link to article describing creation of *TFX* pipeline for sentiment analysis using
-this helper library: [LINK_GOES_HERE](https://dlabs.ai/blog/)
+this helper library: [https://dlabs.ai/resources/courses/bert-sentiment-analysis-on-vertex-ai-using-tfx/](https://dlabs.ai/resources/courses/bert-sentiment-analysis-on-vertex-ai-using-tfx/)

@@ -75,3 +75,7 @@ class PipelineHelperInterface(Protocol):
         enable_cache: bool = False,
     ) -> None:
         """Create and run a pipeline from given set of components and resources."""
+
+    @property
+    def pipeline_root(self) -> str:
+        """Get the pipeline artifacts root directory."""
