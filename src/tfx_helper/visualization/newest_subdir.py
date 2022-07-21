@@ -58,3 +58,57 @@ class NewestLocalPathGetter:
             self.artifact_dir, self.pipeline_name, component_name, output_name
         )
         return get_newest_local_subdirectory(path)
+
+
+@dataclass
+class NewestVertexAIPathGetter:
+    """
+    Tool for obtaining paths to newest artifact directories for your components.
+
+    When running on VertexAI each run creates a new directory with epoch timestamp name.
+    Within that directory a new directory with pipeline name prefix is created.
+    Inside it there are directories for components, each prefixed with component name.
+    Within the component directory there is one directory for each output.
+
+    This tool helps in obtaining the most recent output directory
+    for given component's output
+    (that might not be what you want if you component failed
+    or if you have multiple pipeline jobs running simultainously).
+    """
+
+    artifact_dir: str
+    """
+    Path to pipeline output directory on Google Cloud Storage.
+    """
+    pipeline_name: str
+    """
+    Name of the pipeline.
+    """
+
+    def __call__(self, component_name: str, output_name: str) -> str:
+        pipeline_run_dirs = tf.io.gfile.glob(
+            os.path.join(self.artifact_dir, self.pipeline_name, "*")
+        )
+        newest_run_dir = max(
+            pipeline_run_dirs,
+            key=lambda subdirectory: int(os.path.basename(subdirectory)),
+        )
+        logging.debug(
+            "From %d subdirs selected %r as newest run dir",
+            len(pipeline_run_dirs),
+            newest_run_dir,
+        )
+        dirs = tf.io.gfile.glob(os.path.join(newest_run_dir, "*"))
+        assert len(dirs) == 1, f"Expected a single subdirectory, but got {len(dirs)}"
+        (subdir,) = dirs
+        assert os.path.basename(subdir).startswith(
+            self.pipeline_name
+        ), f"Expected subdirectory to include pipeline name ({self.pipeline_name!r}) but got {subdir!r}"
+        component_dirs = tf.io.gfile.glob(os.path.join(subdir, f"{component_name}_*"))
+        assert (
+            len(dirs) == 1
+        ), f"Expected a single component directory, but got {len(component_dirs)}"
+        (component_dir,) = component_dirs
+        result = os.path.join(component_dir, output_name)
+        logging.debug("Selected %r as newest", result)
+        return result
