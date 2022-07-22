@@ -98,15 +98,14 @@ class NewestVertexAIPathGetter:
             len(pipeline_run_dirs),
             newest_run_dir,
         )
-        dirs = tf.io.gfile.glob(os.path.join(newest_run_dir, "*"))
-        assert len(dirs) == 1, f"Expected a single subdirectory, but got {len(dirs)}"
-        (subdir,) = dirs
-        assert os.path.basename(subdir).startswith(
-            self.pipeline_name
-        ), f"Expected subdirectory to include pipeline name ({self.pipeline_name!r}) but got {subdir!r}"
+        dirs = tf.io.gfile.glob(os.path.join(newest_run_dir, f"{self.pipeline_name}-*"))
+        # The directories are timestamped pipelinename-20220721110503
+        # the date should be string-sortable
+        subdir = max(dirs, key=lambda dir: os.path.basename(dir))
+        logging.debug("From %d dirs selected %r", len(dirs), subdir)
         component_dirs = tf.io.gfile.glob(os.path.join(subdir, f"{component_name}_*"))
         assert (
-            len(dirs) == 1
+            len(component_dirs) == 1
         ), f"Expected a single component directory, but got {len(component_dirs)}"
         (component_dir,) = component_dirs
         result = os.path.join(component_dir, output_name)
