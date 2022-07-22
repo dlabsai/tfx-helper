@@ -30,6 +30,12 @@ def load_entries(
     result = tfma.load_eval_result(
         output_path=dir, output_file_format=None, model_name=model_name
     )
+    if not result.model_location:
+        # in case of pipeline running for the first time, there might be a single
+        # unnamed model only in evaluation results. In such a case we will load
+        # the data again without model name to retrieve the correct results.
+        result = tfma.load_eval_result(output_path=dir, output_file_format=None)
+
     # Select data for given slice
     if slice_key is None:
         slice_spec = tfma.slicer.slicer_lib.SingleSliceSpec()
