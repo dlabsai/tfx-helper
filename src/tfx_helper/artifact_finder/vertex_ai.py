@@ -74,21 +74,3 @@ class NewsetRunVertexAIPathGetter:
         artifact_uri: str = artifact.uri
         logging.debug("Returning artifact URI %r", artifact_uri)
         return artifact_uri
-
-
-def main() -> None:
-    from pipeline.constants import PIPELINE_NAME
-    from pipeline.utils import get_gcp_project, get_gcp_region
-
-    path_getter = NewsetRunVertexAIPathGetter(
-        pipeline_name=PIPELINE_NAME,
-        region=get_gcp_region(),
-        project=get_gcp_project(),
-        page_size=3,
-    )
-    print(path_getter("Evaluator", "evaluation"))
-
-
-if __name__ == "__main__":
-    logging.set_verbosity(logging.DEBUG)
-    main()

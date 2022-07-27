@@ -7,6 +7,10 @@ from google.cloud import aiplatform_v1
 
 # Helpers for creating filter definitions accoring to AIP-160
 # (https://google.aip.dev/160)
+def wrap_parens(value: str) -> str:
+    return f"({value})"
+
+
 def EQ(attr: str, value: str) -> str:
     return f"{attr} = {json.dumps(value)}"
 
@@ -16,7 +20,11 @@ def HAS(context: str, value: str) -> str:
 
 
 def AND(*conditions: str) -> str:
-    return " AND ".join(conditions)
+    return wrap_parens(" AND ".join(conditions))
+
+
+def OR(*conditions: str) -> str:
+    return wrap_parens(" OR ".join(conditions))
 
 
 def FUN(name: str, value: str) -> str:
@@ -89,7 +97,10 @@ class MLMetadataQuery:
             parent=self._get_metadata_store_context(),
             page_size=self.page_size,
             filter=AND(
-                EQ("schema_title", "system.ContainerExecution"),
+                OR(
+                    EQ("schema_title", "system.ContainerExecution"),
+                    EQ("schema_title", "system.ResolverExecution"),
+                ),
                 EQ("display_name", component_name),
                 FUN("in_context", run_name),
             ),
@@ -103,21 +114,14 @@ class MLMetadataQuery:
         request = aiplatform_v1.QueryExecutionInputsAndOutputsRequest(
             execution=execution_name
         )
-        results = self.client.query_execution_inputs_and_outputs(
-            request=request
-        )
+        results = self.client.query_execution_inputs_and_outputs(request=request)
         return results
 
-    def get_output_artifact_name(
-        self, *, execution_name: str, output_name: str
-    ) -> str:
+    def get_output_artifact_name(self, *, execution_name: str, output_name: str) -> str:
         """Retrieve the name of a given output artifact from given execution."""
-        inputs_and_outputs = self._get_inputs_and_outputs(
-            execution_name=execution_name
-        )
+        inputs_and_outputs = self._get_inputs_and_outputs(execution_name=execution_name)
         output_events = filter(
-            lambda event: event.type_
-            == aiplatform_v1.types.event.Event.Type.OUTPUT,
+            lambda event: event.type_ == aiplatform_v1.types.event.Event.Type.OUTPUT,
             inputs_and_outputs.events,
         )
         output_artifacts = filter(
