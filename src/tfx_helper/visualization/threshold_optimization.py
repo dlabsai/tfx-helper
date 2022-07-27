@@ -6,6 +6,8 @@ import tensorflow as tf
 import tensorflow_model_analysis as tfma
 from absl import logging
 
+from .display_value_artifact import display_value_artifact
+
 
 @dataclass
 class Entry:
@@ -41,9 +43,7 @@ def load_entries(
         slice_spec = tfma.slicer.slicer_lib.SingleSliceSpec()
     else:
         slice_spec = tfma.SlicingSpec(feature_values=slice_key)
-    data, config = tfma.view.util.get_plot_data_and_config(
-        result.plots, slice_spec
-    )
+    data, config = tfma.view.util.get_plot_data_and_config(result.plots, slice_spec)
     # Extract confusion matrix data
     confusion_matrix_config = config["metricKeys"]["confusionMatrixPlot"]
     plot_data = data[confusion_matrix_config["metricName"]][
@@ -67,9 +67,7 @@ def g_mean(entry: Entry) -> float:
     return (sensitivity * specificity) ** 2
 
 
-def find_best_binary_classification_threshold(
-    *, dir: str, model_name: str
-) -> float:
+def find_best_binary_classification_threshold(*, dir: str, model_name: str) -> float:
     entries = load_entries(dir=dir, model_name=model_name, slice_key=None)
     entries.sort(key=g_mean, reverse=True)
     best_entry, *_rest = entries
@@ -81,7 +79,5 @@ def find_best_binary_classification_threshold(
     return best_entry.threshold
 
 
-def load_best_threshold(dir: str) -> float:
-    file_path = os.path.join(dir, "value")
-    with tf.io.gfile.GFile(file_path, "r") as f:
-        return float(f.read())
+def load_best_threshold(path: str) -> float:
+    return float(display_value_artifact(path))
