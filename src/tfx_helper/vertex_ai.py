@@ -75,6 +75,11 @@ class VertexAIPipelineHelper(BasePipelineHelper):
     for running HP tuning workers.
     """
 
+    use_dataflow: bool = False
+    """
+    Whether to use Dataflow for Beam-powered components.
+    """
+
     resource_overrides: Mapping[str, Resources] = Field(
         default_factory=lambda: DEFAULT_OVERRIDES
     )
@@ -241,11 +246,22 @@ class VertexAIPipelineHelper(BasePipelineHelper):
         components: Iterable[BaseComponent],
         enable_cache: bool = False,
     ) -> None:
+        beam_pipeline_args: Optional[List[str]] = None
+        if self.use_dataflow:
+            logging.info("Including Dataflow Beam configuration")
+            beam_pipeline_args = [
+                "--runner=DataflowRunner",
+                f"--project={self.google_cloud_project}",
+                f"--worker_harness_container_image={self.docker_image}",
+                "--experiments=use_runner_v2",
+            ]
+
         pipeline = tfx.dsl.Pipeline(
             pipeline_name=self.pipeline_name,
             pipeline_root=self.pipeline_root,
             components=list(components),
             enable_cache=enable_cache,
+            beam_pipeline_args=beam_pipeline_args,
         )
 
         with tempfile.NamedTemporaryFile(
