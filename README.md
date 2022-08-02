@@ -186,16 +186,35 @@ the following prerequisites need to be fulfilled:
 
 #### Getting recent artifact directory
 
-Each TFX artifact is stored in the TFX pipeline's output location in a directory
-for given component (by name) and component output (by name) as well as run identifier.
-For locally ran pipelines we provide a utility that can be used to get the most recent
-artifact directory:
+Each TFX artifact is stored in the TFX pipeline's output location.
+Depending on whether you run your pipeline locally or on VertexAI the structure
+of the directories is different. We provide helpers that can assist you in retrieving
+the newest artifact locations. In local environment the helper uses directory traversal
+to find the correct path. With VertexAI the helper communicates with VertexAI ML Metadata
+Service.
+
+For local pipeline runs:
 
 ```python
-from tfx_helper.visualization.newest_subdir import NewestLocalPathGetter, NewestPathGetterInterface
+from tfx_helper.artifact_finder.local import NewestLocalPathGetter
+from tfx_helper.artifact_finder.interface import ArtifactPathGetterInterface
 
-path_getter: NewestPathGetterInterface = NewestLocalPathGetter(
+path_getter: ArtifactPathGetterInterface = NewestLocalPathGetter(
     artifact_dir=pipeline_output, pipeline_name=pipeline_name
+)
+
+best_hparams_path = path_getter('Tuner', 'best_hyperparameters')
+evaluation_path = path_getter('Evaluator', 'evaluation')
+```
+
+For VertexAI pipeline runs:
+
+```python
+from tfx_helper.artifact_finder.interface import ArtifactPathGetterInterface
+from tfx_helper.artifact_finder.vertex_ai import NewsetRunVertexAIPathGetter
+
+path_getter: ArtifactPathGetterInterface = NewsetRunVertexAIPathGetter(
+    pipeline_name=pipeline_name, region=gcp_region, project=gcp_project
 )
 
 best_hparams_path = path_getter('Tuner', 'best_hyperparameters')
